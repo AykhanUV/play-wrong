@@ -19,8 +19,8 @@ WORKDIR /usr/src/app
 
 # Install Chromium and clean up apt-get cache
 RUN apt-get update && \
-    apt-get install -y chromium --no-install-recommends && \
-    rm -rf /var/lib/apt/lists/*
+    apt-get install -y dumb-init chromium --no-install-recommends && \
+    rm -rf /var/lib/apt/lists/* /tmp/*
 
 # Copy dependencies and source from the builder stage
 COPY --from=builder /usr/src/app/node_modules ./node_modules
@@ -30,4 +30,4 @@ COPY --from=builder /usr/src/app ./
 EXPOSE 3000
 
 # Start the app
-CMD [ "node", "index.js" ]
+CMD ["dumb-init", "node", "index.js"]

@@ -38,9 +38,8 @@ async function scrapeUrl(queryParams) {
         '--disable-setuid-sandbox',
         '--disable-accelerated-2d-canvas',
         '--no-first-run',
-        '--no-zygote',
-        '--single-process',
-        '--disable-gpu'
+        '--disable-gpu',
+        '--disable-dev-shm-usage'
       ],
       executablePath: '/usr/bin/chromium',
       headless: true,
@@ -154,7 +153,15 @@ async function scrapeUrl(queryParams) {
     };
   } finally {
     if (browser) {
-      await browser.close();
+      const process = browser.process();
+      if (process) {
+        await browser.close().catch(e => {
+          console.error('Error during graceful browser close, forcing kill:', e);
+          process.kill('SIGKILL');
+        });
+      } else {
+        await browser.close().catch(e => console.error('Error during fallback browser close:', e));
+      }
     }
   }
 }
