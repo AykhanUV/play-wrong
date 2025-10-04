@@ -1,13 +1,8 @@
 require('dotenv').config();
 const express = require('express');
-const puppeteer = require('puppeteer-extra');
-const StealthPlugin = require('puppeteer-extra-plugin-stealth');
-const AdblockerPlugin = require('puppeteer-extra-plugin-adblocker');
+const { getBrowser } = require('./browser');
 const CryptoJS = require('crypto-js');
 const cors = require('cors');
-
-puppeteer.use(StealthPlugin());
-puppeteer.use(AdblockerPlugin({ blockTrackers: true }));
 
 const app = express();
 app.use(cors());
@@ -30,22 +25,10 @@ async function scrapeUrl(queryParams) {
     throw err;
   }
 
-  let browser = null;
+  let page = null;
   try {
-    browser = await puppeteer.launch({
-      args: [
-        '--no-sandbox',
-        '--disable-setuid-sandbox',
-        '--disable-accelerated-2d-canvas',
-        '--no-first-run',
-        '--disable-gpu',
-        '--disable-dev-shm-usage'
-      ],
-      executablePath: '/usr/bin/chromium',
-      headless: true,
-    });
-
-    const page = await browser.newPage();
+    const browser = await getBrowser();
+    page = await browser.newPage();
     await page.setUserAgent('Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:128.0) Gecko/20100101 Firefox/128.0');
     const headers = {
       'Accept-Language': 'en-US,en;q=0.5',
@@ -151,17 +134,13 @@ async function scrapeUrl(queryParams) {
       requests,
       screenshot: screenshotBase64,
     };
+  } catch (error) {
+    console.error('An error occurred during scraping:', error);
+    // Re-throw the error to be caught by the route handler
+    throw error;
   } finally {
-    if (browser) {
-      const process = browser.process();
-      if (process) {
-        await browser.close().catch(e => {
-          console.error('Error during graceful browser close, forcing kill:', e);
-          process.kill('SIGKILL');
-        });
-      } else {
-        await browser.close().catch(e => console.error('Error during fallback browser close:', e));
-      }
+    if (page) {
+      await page.close();
     }
   }
 }
