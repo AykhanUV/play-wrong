@@ -6,7 +6,7 @@ WORKDIR /usr/src/app
 
 # Install app dependencies
 COPY package.json package-lock.json ./
-RUN npm cache clean --force && npm install --no-optional && npm install -g pm2
+RUN npm cache clean --force && npm install --no-optional
 
 # Copy app source
 COPY . .
@@ -16,6 +16,8 @@ FROM node:18-slim
 
 # Set the working directory in the container
 WORKDIR /usr/src/app
+
+RUN npm install -g pm2
 
 # Install Chromium and clean up apt-get cache
 RUN apt-get update && \
@@ -30,4 +32,4 @@ COPY --from=builder /usr/src/app ./
 EXPOSE 3000
 
 # Start the app
-CMD ["pm2-runtime", "start", "ecosystem.config.js", "--env", "production"]
+CMD ["dumb-init", "pm2-runtime", "start", "ecosystem.config.js", "--env", "production"]
