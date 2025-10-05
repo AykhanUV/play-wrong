@@ -19,6 +19,7 @@ async function getBrowser() {
         '--disable-gpu',
         '--disable-dev-shm-usage'
       ],
+      executablePath: '/usr/bin/chromium',
       headless: true,
     });
   }
